@@ -1,0 +1,10 @@
+pymupdf
+sqlmodel
+sqlalchemy
+sentence-transformers
+chromadb
+pydantic
+typer
+loguru
+python-dateutil
+langdetect
