@@ -1,0 +1,14 @@
+pymupdf
+fastembed
+faiss-cpu
+pydantic
+langchain
+langchain-community
+fastapi
+uvicorn
+streamlit
+typer
+loguru
+python-dateutil
+langdetect
+gradio
