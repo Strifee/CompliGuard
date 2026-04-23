@@ -109,14 +109,3 @@ python query.py "Article 111-1" --top-k 5
 |---|---|---|
 | **Claude** (default) | Set `ANTHROPIC_API_KEY` in `.env` | Best quality |
 | **Ollama** | Run `ollama pull mistral` locally | Offline fallback |
-
----
-
-## Demo questions
-
-| Question | What it shows |
-|---|---|
-| `Quelles sont les obligations de transparence pour un émetteur ?` | French, rich citations |
-| `What are the sanctions for market abuse?` | English support |
-| *(follow-up)* `Can you give me a specific example?` | Conversation memory |
-| `What is the AMF's position on crypto assets?` | Out-of-corpus guardrail |
