@@ -120,30 +120,3 @@ python query.py "Article 111-1" --top-k 5
 | `What are the sanctions for market abuse?` | English support |
 | *(follow-up)* `Can you give me a specific example?` | Conversation memory |
 | `What is the AMF's position on crypto assets?` | Out-of-corpus guardrail |
-
----
-
-## Project structure
-
-```
-CompliGuard-FR/
-├── data/                  # AMF PDFs (git-ignored)
-├── vector_store/          # FAISS index + metadata (git-ignored)
-├── extract/
-│   └── pdf_reader.py      # PDF text extraction + noise cleanup
-├── transform/
-│   ├── segmenter.py       # Article-level segmentation
-│   └── chunker.py         # Paragraph-aware chunker
-├── vector/
-│   ├── embeddings.py      # fastembed wrapper (multilingual)
-│   └── vector_store.py    # FAISS build / load / search
-├── storage/
-│   └── models.py          # Chunk pydantic model
-├── ingest.py              # ETL pipeline entry point
-├── generate_metadata.py   # Metadata-only pass (no embedding)
-├── query.py               # Retrieval layer
-├── llm.py                 # Generation layer (Claude + Ollama)
-├── ui.py                  # Gradio UI
-├── api.py                 # FastAPI REST layer
-└── test_embeddings.py     # Embedding smoke test
-```
