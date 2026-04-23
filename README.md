@@ -70,7 +70,7 @@ This extracts text, segments by article, embeds with a multilingual model, and b
 python ui.py
 ```
 
-![CompliGuard-FR UI](image.png)
+![CompliGuard-FR UI](img/image.png)
 
 Full-featured interface with conversation history sidebar, source excerpts panel, and LIVRE filter.
 
