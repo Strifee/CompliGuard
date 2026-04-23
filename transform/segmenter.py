@@ -1,50 +1,56 @@
 import re
 
 # ---------------------------------------------------------------------------
-# Structural marker patterns — ordered from broadest to most specific.
-# Each pattern is matched against the full raw text; we collect all match
-# positions and scan linearly to maintain a running hierarchy context.
+# Structural marker patterns for the AMF France Règlement Général.
+# Hierarchy: LIVRE → TITRE → CHAPITRE → Section → Article
+#
+# Article numbering in the AMF RG follows the pattern:
+#   Article XXX-Y  where the first 3 digits encode LIVRE/TITRE/CHAPITRE
+#   e.g. Article 111-1 = Livre I, Titre I, Chapitre I, Art. 1
+#        Article 212-4 = Livre II, Titre I, Chapitre II, Art. 4
 # ---------------------------------------------------------------------------
 
 _MARKERS = [
-    # LIVRE I / II / III / IV  (standalone line)
-    ("livre", re.compile(r"(?m)^\s*(LIVRE\s+[IVX]+)\s*$")),
-
-    # Document-level headers: Loi, Dahir, Décret, Arrêté, Règlement, Circulaire
-    # We exclude table-of-contents lines (ending with ......N)
-    ("document", re.compile(
-        r"(?m)^\s*("
-        r"Dahir[^\n]{3,120}"
-        r"|Loi\s+n[°o]\s*\d[^\n]{3,120}"
-        r"|D[eé]cret\s+n[°o]\s*\d[^\n]{3,120}"
-        r"|Arr[eê]t[eé]\s+n[°o]\s*\d[^\n]{3,120}"
-        r"|R[eè]glement\s+[Gg][eé]n[eé]ral[^\n]{0,120}"
-        r"|Circulaire\s+de\s+[^\n]{3,120}"
-        r")\s*$"
+    # LIVRE I / II / ... / VI  (standalone line, any case)
+    ("livre", re.compile(
+        r"(?m)^\s*(LIVRE\s+(?:[IVX]+|PREMIER|UNIQUE))\s*$", re.IGNORECASE
     )),
 
-    # TITRE I / II / ...  (standalone line, any case)
-    ("titre", re.compile(r"(?m)^\s*(TITRE\s+(?:[IVX]+|PREMIER))\s*$", re.IGNORECASE)),
+    # TITRE I / II / ...  (standalone line)
+    ("titre", re.compile(
+        r"(?m)^\s*(TITRE\s+(?:[IVX]+|PREMIER|UNIQUE))\s*$", re.IGNORECASE
+    )),
 
-    # CHAPITRE / Chapitre PREMIER / I / II ...  (standalone line)
-    ("chapitre", re.compile(r"(?m)^\s*((?:CHAPITRE|Chapitre)\s+(?:[IVX]+|PREMIER))\s*$")),
+    # CHAPITRE I / II / ...  (standalone line)
+    ("chapitre", re.compile(
+        r"(?m)^\s*((?:CHAPITRE|Chapitre)\s+(?:[IVX]+|PREMIER|UNIQUE))\s*$"
+    )),
 
-    # Article — standard "Article 12" and Circulaire-style "Article I.1.1"
-    ("article", re.compile(r"(?m)^\s*((?:Article|Art\.)\s+[IVX\d][A-Za-z\.\-\d]*(?:er)?)\b")),
+    # Section (e.g. "Section 1 - Les émetteurs", "Sous-section 1")
+    ("section", re.compile(
+        r"(?m)^\s*((?:Sous-)?[Ss]ection\s+\d+(?:[^\n]{0,80})?)\s*$"
+    )),
+
+    # Article — AMF RG format: "Article 111-1", "Article 212-4"
+    # Also handles plain "Article 1er", "Article 2 bis", simpler texts
+    ("article", re.compile(
+        r"(?m)^\s*(Article\s+(?:\d{3}-\d+(?:-\d+)?|\d+(?:er|ème)?(?:\s*(?:bis|ter|quater))?))\b"
+    )),
 ]
 
 # Levels in descending order of breadth — resetting a level clears everything below it
-_LEVEL_ORDER = ["livre", "document", "titre", "chapitre"]
+_LEVEL_ORDER = ["livre", "titre", "chapitre", "section"]
 
 
 def split_by_articles(raw_text: str) -> list[dict]:
     """
-    Parse raw text into article-level sections, each carrying its full
-    hierarchical context:
-        livre → document → titre → chapitre → article_ref → text
+    Parse the raw text of an AMF regulatory document into article-level
+    sections, each carrying its full hierarchical context:
+
+        livre → titre → chapitre → section → article_ref → text
 
     Strategy: collect all structural marker positions, sort by offset,
-    then scan linearly maintaining a running context dict.  When a
+    then scan linearly maintaining a running context dict. When a
     higher-level marker appears it resets all levels below it.
     """
     all_matches = []
@@ -52,11 +58,6 @@ def split_by_articles(raw_text: str) -> list[dict]:
     for level, rx in _MARKERS:
         for m in rx.finditer(raw_text):
             label = " ".join(m.group(1).split())  # normalise whitespace
-
-            # Drop table-of-contents lines (e.g. "Loi n° 43-12 ........... 15")
-            if level == "document" and re.search(r"\.{3,}\s*\d+\s*$", label):
-                continue
-
             all_matches.append((m.start(), m.end(), level, label))
 
     all_matches.sort(key=lambda x: x[0])
@@ -68,11 +69,15 @@ def split_by_articles(raw_text: str) -> list[dict]:
 
     for pos, end, level, label in all_matches:
         if level == "article":
-            # Flush the previous article before starting a new one
+            # Flush the previous article before opening a new one
             if current_article_ref is not None:
                 article_text = raw_text[current_text_start:pos].strip()
                 if article_text:
-                    sections.append({**context, "article_ref": current_article_ref, "text": article_text})
+                    sections.append({
+                        **context,
+                        "article_ref": current_article_ref,
+                        "text": article_text,
+                    })
             current_article_ref = label
             current_text_start = end
         else:
@@ -86,10 +91,17 @@ def split_by_articles(raw_text: str) -> list[dict]:
     if current_article_ref is not None:
         article_text = raw_text[current_text_start:].strip()
         if article_text:
-            sections.append({**context, "article_ref": current_article_ref, "text": article_text})
+            sections.append({
+                **context,
+                "article_ref": current_article_ref,
+                "text": article_text,
+            })
 
     if not sections:
-        return [{"livre": None, "document": None, "titre": None,
-                 "chapitre": None, "article_ref": None, "text": raw_text.strip()}]
+        # No article markers found — return the whole text as a single section
+        return [{
+            "livre": None, "titre": None, "chapitre": None,
+            "section": None, "article_ref": None, "text": raw_text.strip(),
+        }]
 
     return sections

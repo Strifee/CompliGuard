@@ -1,1 +1,24 @@
+# Environment
 .env
+.env.local
+
+# Generated data — too large and machine-specific
+vector_store/
+data/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/

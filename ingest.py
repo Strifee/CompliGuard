@@ -1,7 +1,7 @@
 """
 ingest.py — ETL pipeline entry point.
 
-Runs the full ingestion flow for all PDFs in a source directory:
+Runs the full ingestion flow for all AMF regulatory PDFs in a source directory:
   PDF → extract text → segment by article → chunk → embed → FAISS store
 
 Usage:
@@ -56,9 +56,9 @@ def ingest_pdf(path: Path, store_dir: str) -> None:
                 source=path.name,
                 page=_estimate_page(text, pages),
                 livre=section.get("livre"),
-                document=section.get("document"),
                 titre=section.get("titre"),
                 chapitre=section.get("chapitre"),
+                section=section.get("section"),
                 article_ref=section.get("article_ref"),
                 text=text,
             ))

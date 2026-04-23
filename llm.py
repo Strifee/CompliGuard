@@ -30,20 +30,26 @@ console = Console()
 OLLAMA_URL = "http://localhost:11434/api/chat"
 CLAUDE_MODEL = "claude-haiku-4-5-20251001"
 
-SYSTEM_PROMPT = """Tu es un assistant juridique spécialisé dans la réglementation française des marchés financiers (AMF).
-Tu réponds UNIQUEMENT en te basant sur les extraits réglementaires fournis dans chaque message utilisateur.
-Tu peux expliquer, reformuler, donner des exemples, et répondre aux questions de suivi.
-Règles strictes :
-- Ne jamais inventer ou deviner la signification d'un acronyme s'il n'est pas explicitement défini dans les extraits fournis. Si l'acronyme n'est pas défini, écris-le tel quel sans l'expanser.
-- Si une information n'est pas dans les extraits, dis-le clairement : "Cette information ne figure pas dans les extraits fournis."
-- Ne jamais ajouter de connaissances extérieures aux extraits.
-- Cite toujours les articles et textes sources à la fin de ta réponse."""
+SYSTEM_PROMPT = """You are a legal assistant specialised in French financial market regulation (AMF — Autorité des marchés financiers).
+You answer in the same language as the user's question:
+- If the question is in French, reply entirely in French — including all meta-phrases (e.g. use "extraits fournis" not "excerpts", "informations" not "information").
+- If the question is in English, reply entirely in English.
+Never mix languages within a response.
+You answer ONLY based on the regulatory excerpts provided in each user message.
+You may explain, rephrase, give examples, and answer follow-up questions.
+Strict rules:
+- Never invent or guess the meaning of an acronym unless it is explicitly defined in the provided excerpts. If not defined, write it as-is.
+- If the question is in French and information is missing: "Cette information ne figure pas dans les extraits fournis."
+- If the question is in English and information is missing: "This information does not appear in the provided excerpts."
+- Never add knowledge from outside the excerpts.
+- Always cite the source articles at the end of your answer."""
 
-EXPAND_PROMPT = """Tu es un expert en réglementation financière française (AMF).
-Génère 3 reformulations courtes de la question suivante pour améliorer la recherche documentaire.
-Chaque reformulation doit être sur une ligne séparée, sans numérotation ni tiret.
-Inclus les acronymes ET leurs formes complètes quand pertinent.
-Réponds UNIQUEMENT avec les 3 reformulations, rien d'autre."""
+EXPAND_PROMPT = """You are an expert in French financial regulation (AMF).
+Generate 3 short reformulations of the following question to improve document retrieval.
+Each reformulation must be on a separate line, without numbering or dashes.
+Include acronyms AND their full forms when relevant.
+If the question is in English, reformulate in both French and English.
+Reply ONLY with the 3 reformulations, nothing else."""
 
 
 # ── Context builders ──────────────────────────────────────────────────────────
@@ -51,15 +57,15 @@ Réponds UNIQUEMENT avec les 3 reformulations, rien d'autre."""
 def build_context(chunks: list[Chunk]) -> str:
     parts = []
     for i, c in enumerate(chunks, 1):
-        location = " > ".join(filter(None, [c.livre, c.document, c.titre, c.chapitre, c.article_ref]))
-        parts.append(f"[Extrait {i} | {location} | p.{c.page}]\n{c.text}")
+        location = " > ".join(filter(None, [c.livre, c.titre, c.chapitre, c.section, c.article_ref]))
+        parts.append(f"[Excerpt {i} | {location} | p.{c.page}]\n{c.text}")
     return "\n\n---\n\n".join(parts)
 
 
 def build_citations(chunks: list[Chunk]) -> str:
     lines = []
     for i, c in enumerate(chunks, 1):
-        parts = filter(None, [c.livre, c.document, c.article_ref, f"p.{c.page}"])
+        parts = filter(None, [c.livre, c.titre, c.article_ref, f"p.{c.page}"])
         lines.append(f"[{i}] {' — '.join(parts)}")
     return "\n".join(lines)
 
@@ -70,11 +76,11 @@ def ask_claude(question: str, context: str, history: list[dict]) -> str:
     import anthropic
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-    user_message = f"""Voici les extraits réglementaires pertinents :
+    user_message = f"""Relevant regulatory excerpts:
 
 {context}
 
-Question : {question}"""
+Question: {question}"""
 
     messages = []
     messages.extend(history)
@@ -105,11 +111,11 @@ def expand_query_claude(question: str) -> list[str]:
 # ── Ollama fallback ───────────────────────────────────────────────────────────
 
 def ask_ollama(question: str, context: str, model: str, history: list[dict]) -> str:
-    user_message = f"""Voici les extraits réglementaires pertinents :
+    user_message = f"""Relevant regulatory excerpts:
 
 {context}
 
-Question : {question}"""
+Question: {question}"""
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     messages.extend(history)
@@ -182,7 +188,7 @@ def answer(
     chunks = [c for _, c in scored][:top_k]
 
     if not chunks:
-        return {"answer": "Aucun extrait pertinent trouvé.", "citations": "", "chunks": []}
+        return {"answer": "No relevant excerpts found. / Aucun extrait pertinent trouvé.", "citations": "", "chunks": []}
 
     context = build_context(chunks)
 

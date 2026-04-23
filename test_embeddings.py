@@ -5,10 +5,10 @@ Run from project root: python test_embeddings.py
 import math
 from vector.embeddings import embed_batch
 
-# French regulatory text — representative of AMMC document content
+# French regulatory text — representative of AMF document content
 samples = [
     "Les dispositions du présent règlement s'appliquent aux organismes de placement collectif.",
-    "Article 12 - Tout émetteur doit déposer un prospectus auprès de l'AMMC.",
+    "Article 111-1 - Tout émetteur doit déposer un prospectus auprès de l'AMF.",
     "This is an English sentence to verify multilingual support.",
 ]
 

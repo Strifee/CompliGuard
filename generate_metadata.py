@@ -59,9 +59,9 @@ def main(
                     source=path.name,
                     page=_estimate_page(text, pages),
                     livre=section.get("livre"),
-                    document=section.get("document"),
                     titre=section.get("titre"),
                     chapitre=section.get("chapitre"),
+                    section=section.get("section"),
                     article_ref=section.get("article_ref"),
                     text=text,
                 ))

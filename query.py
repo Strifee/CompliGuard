@@ -6,7 +6,7 @@ Embeds a question and retrieves the most relevant chunks from the FAISS index.
 Usage:
     python query.py "Quelles sont les obligations de l'émetteur ?"
     python query.py "dépôt de prospectus" --top-k 5
-    python query.py "Article 12 AMMC" --livre "LIVRE I"
+    python query.py "Article 111-1" --livre "LIVRE I"
 """
 import typer
 from rich.console import Console
@@ -40,7 +40,7 @@ def retrieve(
     Embed a question and return the top_k most relevant chunks.
 
     Args:
-        question:  Natural language query (French or Arabic supported).
+        question:  Natural language query in French or English.
         top_k:     Number of chunks to return. Defaults to 3.
         store_dir: Path to the FAISS index directory.
         livre:     Optional filter — restrict results to a specific LIVRE

@@ -13,21 +13,21 @@ from typing import Optional
 
 from llm import answer
 
-app = FastAPI(title="CompliGuard API", version="0.1.0")
+app = FastAPI(title="CompliGuard-FR API", version="0.1.0")
 
 
 class AskRequest(BaseModel):
     question: str
-    model: str = "mistral"
-    top_k: int = 5
+    model: str = "claude"
+    top_k: int = 8
     livre: Optional[str] = None
 
 
 class ChunkOut(BaseModel):
     livre: Optional[str]
-    document: Optional[str]
     titre: Optional[str]
     chapitre: Optional[str]
+    section: Optional[str]
     article_ref: Optional[str]
     page: int
     text: str
@@ -41,7 +41,7 @@ class AskResponse(BaseModel):
 
 @app.get("/")
 def health():
-    return {"status": "ok", "service": "CompliGuard"}
+    return {"status": "ok", "service": "CompliGuard-FR", "corpus": "AMF Règlement Général"}
 
 
 @app.post("/ask", response_model=AskResponse)
@@ -62,9 +62,9 @@ def ask(req: AskRequest):
         chunks=[
             ChunkOut(
                 livre=c.livre,
-                document=c.document,
                 titre=c.titre,
                 chapitre=c.chapitre,
+                section=c.section,
                 article_ref=c.article_ref,
                 page=c.page,
                 text=c.text,

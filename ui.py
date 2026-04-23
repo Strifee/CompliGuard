@@ -9,7 +9,7 @@ import uuid
 import gradio as gr
 from llm import answer
 
-LIVRES = ["(tous)", "LIVRE I", "LIVRE II", "LIVRE III", "LIVRE IV", "LIVRE V"]
+LIVRES = ["(all)", "LIVRE I", "LIVRE II", "LIVRE III", "LIVRE IV", "LIVRE V", "LIVRE VI"]
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -19,7 +19,7 @@ def build_sources_html(chunks) -> str:
         return ""
     rows = []
     for i, c in enumerate(chunks, 1):
-        location = " › ".join(filter(None, [c.livre, c.document, c.titre, c.chapitre, c.article_ref]))
+        location = " › ".join(filter(None, [c.livre, c.titre, c.chapitre, c.section, c.article_ref]))
         rows.append(
             f"<li style='margin-bottom:12px'>"
             f"<b>[{i}]</b> {location} <i>(p.{c.page})</i>"
@@ -69,7 +69,7 @@ def sidebar_choices(convs: dict) -> list:
 
 def respond(message, display_history, convs, current_id, model, top_k, livre_sel):
     ollama_history = to_ollama_history(display_history)
-    livre = None if livre_sel == "(tous)" else livre_sel
+    livre = None if livre_sel == "(all)" else livre_sel
 
     result = answer(message, model=model, top_k=int(top_k), livre=livre, history=ollama_history)
 
@@ -106,62 +106,108 @@ def switch_conversation(selected_id, convs):
 # ── UI ────────────────────────────────────────────────────────────────────────
 
 CSS = """
-body, .gradio-container, .main { background: #0d0d0d !important; }
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
 
-#title { text-align: center; color: #ff4da6 !important; }
-#subtitle { text-align: center; color: #ff80c0; margin-top: -8px; }
+body, .gradio-container, .main {
+    background: #0c0c0f !important;
+    font-family: 'Inter', sans-serif !important;
+}
 
-*, p, span, label, .label-wrap span, h1, h2, h3, h4 { color: #f0f0f0 !important; }
+#title {
+    text-align: center;
+    color: #c9a84c !important;
+    font-size: 2em !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.05em !important;
+    margin-bottom: 4px !important;
+}
+#subtitle {
+    text-align: center;
+    color: #8a7a55 !important;
+    font-size: 0.9em !important;
+    letter-spacing: 0.08em !important;
+    text-transform: uppercase !important;
+    margin-top: -4px !important;
+}
+
+*, p, span, label, .label-wrap span, h1, h2, h3, h4 { color: #e8e4dc !important; }
 
 button.primary {
-    background: #ff4da6 !important;
-    border-color: #ff4da6 !important;
-    color: #ffffff !important;
+    background: linear-gradient(135deg, #c9a84c, #a8893a) !important;
+    border-color: #c9a84c !important;
+    color: #0c0c0f !important;
+    font-weight: 600 !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
 }
-button.primary:hover { background: #e0398e !important; border-color: #e0398e !important; }
+button.primary:hover {
+    background: linear-gradient(135deg, #d4b96a, #c9a84c) !important;
+    border-color: #d4b96a !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px #c9a84c40 !important;
+}
 button.secondary {
-    background: #1a1a1a !important;
-    border-color: #ff4da6 !important;
-    color: #ff4da6 !important;
+    background: #141418 !important;
+    border: 1px solid #2a2830 !important;
+    color: #c9a84c !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
 }
-button.secondary:hover { background: #ff4da6 !important; color: #ffffff !important; }
+button.secondary:hover {
+    background: #1e1c24 !important;
+    border-color: #c9a84c !important;
+    color: #d4b96a !important;
+}
 
 #new-btn { width: 100%; }
 
 input, textarea {
-    background: #1a1a1a !important;
-    border-color: #ff4da6 !important;
-    color: #f0f0f0 !important;
+    background: #141418 !important;
+    border: 1px solid #2a2830 !important;
+    border-radius: 6px !important;
+    color: #e8e4dc !important;
+    transition: border-color 0.2s ease !important;
 }
-input::placeholder, textarea::placeholder { color: #888 !important; }
-input:focus, textarea:focus { border-color: #ff80c0 !important; box-shadow: 0 0 0 2px #ff4da640 !important; }
+input::placeholder, textarea::placeholder { color: #55504a !important; }
+input:focus, textarea:focus {
+    border-color: #c9a84c !important;
+    box-shadow: 0 0 0 2px #c9a84c25 !important;
+    outline: none !important;
+}
 
 .chatbot, [data-testid="chatbot"] {
-    background: #1a1a1a !important;
-    border-color: #ff4da6 !important;
+    background: #101013 !important;
+    border: 1px solid #2a2830 !important;
+    border-radius: 10px !important;
 }
-.prose, .prose * { color: #f0f0f0 !important; }
+.prose, .prose * { color: #e8e4dc !important; line-height: 1.7 !important; }
 
 #sources-box {
     overflow-y: auto;
-    font-size: 0.85em;
-    background: #1a1a1a;
-    border: 1px solid #ff4da6;
-    border-radius: 8px;
-    padding: 10px;
-    color: #f0f0f0;
+    font-size: 0.84em;
+    background: #101013;
+    border: 1px solid #2a2830;
+    border-radius: 10px;
+    padding: 12px;
+    color: #e8e4dc;
+    line-height: 1.6;
 }
-#sources-box * { color: #f0f0f0 !important; }
-#sources-box b { color: #ff80c0 !important; }
-#sources-box i { color: #ffb3d9 !important; }
-#sources-box small { color: #cccccc !important; }
+#sources-box * { color: #e8e4dc !important; }
+#sources-box b { color: #c9a84c !important; }
+#sources-box i { color: #8a7a55 !important; }
+#sources-box hr { border-color: #2a2830 !important; margin: 6px 0 !important; }
 
-.block, .panel { background: #0d0d0d !important; border-color: #333 !important; }
-input[type="radio"] { accent-color: #ff4da6 !important; }
+.block, .panel {
+    background: #0c0c0f !important;
+    border-color: #1e1c24 !important;
+    border-radius: 10px !important;
+}
+input[type="radio"] { accent-color: #c9a84c !important; }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #0d0d0d; }
-::-webkit-scrollbar-thumb { background: #ff4da6; border-radius: 3px; }
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0c0c0f; }
+::-webkit-scrollbar-thumb { background: #2a2830; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #c9a84c; }
 
 footer { display: none !important; }
 """
@@ -175,7 +221,7 @@ with gr.Blocks(title="CompliGuard-FR") as demo:
     current_id_state = gr.State(initial_id)
 
     gr.Markdown("# ⚖️ CompliGuard-FR", elem_id="title")
-    gr.Markdown("Assistant réglementaire AMF", elem_id="subtitle")
+    gr.Markdown("AMF regulatory assistant — French financial markets regulation", elem_id="subtitle")
 
     with gr.Row():
 
@@ -193,7 +239,7 @@ with gr.Blocks(title="CompliGuard-FR") as demo:
             chatbot = gr.Chatbot(label="Conversation", height=500)
             with gr.Row():
                 msg_box = gr.Textbox(
-                    placeholder="Posez votre question sur la réglementation AMF…",
+                    placeholder="Posez votre question en français / Ask in English…",
                     show_label=False,
                     scale=5,
                     container=False,
@@ -204,7 +250,7 @@ with gr.Blocks(title="CompliGuard-FR") as demo:
             gr.Markdown("### Paramètres")
             model_input = gr.Textbox(label="Modèle (claude / ollama)", value="claude")
             top_k_slider = gr.Slider(1, 15, value=8, step=1, label="Chunks récupérés")
-            livre_dd = gr.Dropdown(LIVRES, value="(tous)", label="Filtrer par LIVRE")
+            livre_dd = gr.Dropdown(LIVRES, value="(all)", label="Filter by LIVRE")
             gr.Markdown("### Extraits récupérés")
             sources_html = gr.HTML(elem_id="sources-box")
 
@@ -234,6 +280,6 @@ with gr.Blocks(title="CompliGuard-FR") as demo:
 if __name__ == "__main__":
     demo.launch(
         inbrowser=True,
-        theme=gr.themes.Base(primary_hue="pink", neutral_hue="neutral"),
+        theme=gr.themes.Base(primary_hue="yellow", neutral_hue="neutral"),
         css=CSS,
     )
