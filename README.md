@@ -28,7 +28,7 @@ QUERY
 
 INTERFACES
 ──────────────────────────────────────────────────────
-  Gradio UI                    REST API (FastAPI)
+  Gradio UI                    REST API
 ```
 
 
@@ -50,7 +50,7 @@ cp .env.example .env
 
 **3. Add regulatory PDFs**
 
-Place AMF PDF files in the `data/` directory.
+Place AMF PDF files in the `data/` directory
 
 **4. Run the ingestion pipeline**
 
@@ -58,7 +58,7 @@ Place AMF PDF files in the `data/` directory.
 python ingest.py
 ```
 
-This extracts text, segments by article, embeds with a multilingual model, and builds a FAISS index in `vector_store/`.
+This extracts text, segments by article, embeds with a multilingual model, and builds a FAISS index in `vector_store/`
 
 ---
 
@@ -70,9 +70,9 @@ This extracts text, segments by article, embeds with a multilingual model, and b
 python ui.py
 ```
 
-![CompliGuard-FR UI](img/image.png)
+![ui](img/image.png)
 
-Full-featured interface with conversation history sidebar, source excerpts panel, and LIVRE filter.
+Full-featured interface with conversation history sidebar, source excerpts panel, and LIVRE filter
 
 ### REST API
 
