@@ -1,12 +1,3 @@
-"""
-generate_metadata.py — Metadata-only pass (no embedding, no FAISS).
-
-Runs: PDF → extract → segment → chunk → saves metadata.json
-
-Usage:
-    python generate_metadata.py
-    python generate_metadata.py --pdf-dir data --store-dir vector_store
-"""
 import json
 import typer
 from pathlib import Path

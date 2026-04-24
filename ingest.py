@@ -1,13 +1,3 @@
-"""
-ingest.py — ETL pipeline entry point.
-
-Runs the full ingestion flow for all AMF regulatory PDFs in a source directory:
-  PDF → extract text → segment by article → chunk → embed → FAISS store
-
-Usage:
-    python ingest.py                          # defaults below
-    python ingest.py --pdf-dir data --store-dir vector_store
-"""
 import typer
 from pathlib import Path
 from loguru import logger
@@ -23,26 +13,16 @@ app = typer.Typer()
 
 
 def ingest_pdf(path: Path, store_dir: str) -> None:
-    """
-    Full pipeline for a single PDF file.
-
-    Segment first, then chunk each section independently — this keeps
-    article boundaries intact so the LLM can cite 'Article 12' accurately
-    rather than getting a chunk that straddles two articles.
-    """
     logger.info(f"Processing {path.name}")
 
-    # 1. Extract
     result = pdf_to_text(str(path))
     pages = result["pages"]
     raw_text = result["raw_text"]
     logger.info(f"  Extracted {len(pages)} pages")
 
-    # 2. Segment by article (AMF-aware)
     sections = split_by_articles(raw_text)
     logger.info(f"  Found {len(sections)} sections")
 
-    # 3. Chunk each section, preserving metadata
     all_chunks: list[Chunk] = []
     chunk_index = 0
 
@@ -66,7 +46,6 @@ def ingest_pdf(path: Path, store_dir: str) -> None:
 
     logger.info(f"  Generated {len(all_chunks)} chunks")
 
-    # 4. Embed in batches of 64 to avoid OOM on large docs
     BATCH_SIZE = 64
     all_vectors: list[list[float]] = []
     for i in range(0, len(all_chunks), BATCH_SIZE):
@@ -80,12 +59,6 @@ def ingest_pdf(path: Path, store_dir: str) -> None:
 
 
 def _estimate_page(chunk_text: str, pages: list[dict]) -> int:
-    """
-    Estimate the page number where a chunk originates by finding which
-    page contains the most overlap with the chunk's starting words.
-    Normalises whitespace before comparing to handle newline differences.
-    Falls back to page 1 if no match found.
-    """
     probe = " ".join(chunk_text.split()[:15])
     for page in pages:
         normalized = " ".join(page["text"].split())

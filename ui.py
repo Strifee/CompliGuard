@@ -1,18 +1,9 @@
-"""
-ui.py — Gradio chat interface for CompliGuard.
-Supports multiple independent conversations with a sidebar.
-
-Usage:
-    python ui.py
-"""
 import uuid
 import gradio as gr
 from llm import answer
 
 LIVRES = ["(all)", "LIVRE I", "LIVRE II", "LIVRE III", "LIVRE IV", "LIVRE V", "LIVRE VI"]
 
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
 
 def build_sources_html(chunks) -> str:
     if not chunks:
@@ -65,8 +56,6 @@ def sidebar_choices(convs: dict) -> list:
     ]
 
 
-# ── Core logic ────────────────────────────────────────────────────────────────
-
 def respond(message, display_history, convs, current_id, model, top_k, livre_sel):
     ollama_history = to_ollama_history(display_history)
     livre = None if livre_sel == "(all)" else livre_sel
@@ -102,8 +91,6 @@ def switch_conversation(selected_id, convs):
         return convs[selected_id]["history"], ""
     return [], ""
 
-
-# ── UI ────────────────────────────────────────────────────────────────────────
 
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');

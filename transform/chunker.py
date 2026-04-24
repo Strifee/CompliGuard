@@ -1,27 +1,10 @@
-# transform/chunker.py
-#
-# Character-based, paragraph-aware chunker for AMF regulatory text.
-#
-# AMF articles vary from a single sentence to several paragraphs.
-# We prefer keeping each article whole; we only split if the article
-# exceeds max_chars.  Split points are chosen at paragraph breaks
-# (\n\n), then sentence ends, to avoid cutting a rule mid-sentence.
-
 import re
 
 _SENTENCE_END = re.compile(r'(?<=[.;])\s+')
 
 
 def chunk_text(text: str, max_chars: int = 1200, overlap_chars: int = 150) -> list[str]:
-    """
-    Split *text* into chunks of at most *max_chars* characters.
 
-    Strategy:
-    1. If the text already fits, return it as-is (most articles will).
-    2. Otherwise split at paragraph boundaries (blank lines).
-    3. If a paragraph is still too long, split at sentence ends.
-    4. Merge short splits back up to max_chars, then apply overlap.
-    """
     text = text.strip()
     if not text:
         return []
@@ -29,10 +12,8 @@ def chunk_text(text: str, max_chars: int = 1200, overlap_chars: int = 150) -> li
     if len(text) <= max_chars:
         return [text]
 
-    # Split into paragraphs first
     paragraphs = [p.strip() for p in re.split(r'\n{2,}', text) if p.strip()]
 
-    # Further split any oversized paragraph at sentence boundaries
     segments: list[str] = []
     for para in paragraphs:
         if len(para) <= max_chars:
@@ -49,7 +30,6 @@ def chunk_text(text: str, max_chars: int = 1200, overlap_chars: int = 150) -> li
             if current:
                 segments.append(current.strip())
 
-    # Merge short consecutive segments into chunks up to max_chars
     chunks: list[str] = []
     current = ""
     for seg in segments:

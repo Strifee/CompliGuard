@@ -1,13 +1,3 @@
-"""
-query.py — Retrieval layer.
-
-Embeds a question and retrieves the most relevant chunks from the FAISS index.
-
-Usage:
-    python query.py "Quelles sont les obligations de l'émetteur ?"
-    python query.py "dépôt de prospectus" --top-k 5
-    python query.py "Article 111-1" --livre "LIVRE I"
-"""
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -36,19 +26,7 @@ def retrieve(
     store_dir: str = "vector_store",
     livre: str | None = None,
 ) -> list[Chunk]:
-    """
-    Embed a question and return the top_k most relevant chunks.
 
-    Args:
-        question:  Natural language query in French or English.
-        top_k:     Number of chunks to return. Defaults to 3.
-        store_dir: Path to the FAISS index directory.
-        livre:     Optional filter — restrict results to a specific LIVRE
-                   (e.g. "LIVRE I", "LIVRE II").
-
-    Returns:
-        List of (score, Chunk) tuples ordered by relevance (highest first).
-    """
     index, chunks = get_store(store_dir)
 
     query_vector = embed_batch([question])[0]
